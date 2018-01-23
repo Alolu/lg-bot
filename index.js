@@ -13,6 +13,7 @@ bot.on("ready", function () {
 })
 
 function checkForCommands(msg){
+
 	if(msg.author.id != bot.user.id && (msg.content.startsWith(commandPrefix))){
 		var cmdTxt = msg.content.split(" ")[0].substr(commandPrefix.length);
 		var suffix = msg.content.substr(cmdTxt.length+commandPrefix.length+1);
