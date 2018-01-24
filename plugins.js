@@ -22,7 +22,7 @@ function load_plugins(){
 		try{
 			plugin = require(plugin_dir + plugin_folders[i])
 		}catch(err){
-			console.log("bug plugins folder"  + err)
+			console.log("bug plugins folder "  + err)
 		}
 		if(plugin){
 			if("commands" in plugin){
@@ -34,6 +34,6 @@ function load_plugins(){
 				}
 			}
 		}
-		console.log(commandCount);
 	}
+	console.log(commandCount);
 }

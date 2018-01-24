@@ -1,6 +1,5 @@
 exports.commands = [
 	"bonne",
-	"test2"
 ]
 
 exports.bonne = {
@@ -29,12 +28,5 @@ exports.bonne = {
 		var phraseRandom = Math.floor(Math.random()*phrases.length);
 
 		msg.channel.send(phrases[phraseRandom]);
-	}
-}
-exports.test2 = {
-	usage: "<arg1> <arg2>",
-	description: "fonction test 2",
-	process: function(bot,msg,suffix){
-		msg.reply("test2")
 	}
 }
