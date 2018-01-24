@@ -11,7 +11,7 @@ exports.commands = [
 
 exports.lgStatus = {
 	usage : "<nom de la partie>",
-	description: "voir le status d'une partie",
+	description: "voir le status d'une partie!",
 	args: 1,
 	process: function(bot,msg,suffix){
 		try{

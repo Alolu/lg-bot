@@ -5,7 +5,7 @@ function LgGame(titre,maxPlayers,bot,msg) {
 	this.maxPlayers = maxPlayers;
 	this.bot = bot;
 	this.msg = msg;
-	this.state = "En attente de joueurs";
+	this.state = "En attente de joueurs"; 
 	this.players = [];
 
 	this.makeChannel = function(){
