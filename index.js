@@ -56,7 +56,35 @@ function checkForCommands(msg){
 			}
 		}else if(cmd){
 			try{
-				cmd.process(bot,msg,suffix);
+				if(cmd.args){
+					var args = suffix.split(" ");
+					var errMsg = "\n";
+					var good = true;
+					if(args.length > cmd.args){
+						errMsg += "Il y'a trop d'arguments!"
+					}
+					if(!suffix || args.length < cmd.args){
+						errMsg += "Il manque des arguments!"
+					}
+					console.log(msg.mentions.users);
+					if(cmd.type == "mention" && msg.mentions.users.array().length == 0 && suffix && args.length == cmd.args){
+							errMsg += "Vous devez mentionner un utilisateur!";
+							good = false;
+					}
+					console.log(args.length + "/" + cmd.args );
+					if(suffix && args.length == cmd.args && good){
+						if(args.length == 1){
+							cmd.process(bot,msg,args[0]);
+						}else{
+							cmd.process(bot,msg,args);
+						}
+					}else{
+						errMsg += "\n" + cmd.usage + "\n" + cmd.description;
+						msg.reply(errMsg);
+					}					
+				}else{
+					cmd.process(bot,msg,suffix);
+				}
 			}catch(e){
 				msg.channel.send(e);
 			}

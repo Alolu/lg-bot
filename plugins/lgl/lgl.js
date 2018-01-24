@@ -12,6 +12,7 @@ exports.commands = [
 exports.lgStatus = {
 	usage : "<nom de la partie>",
 	description: "voir le status d'une partie",
+	args: 1,
 	process: function(bot,msg,suffix){
 		try{
 			for(var i = 0; i < games.length; i++){
@@ -36,6 +37,7 @@ exports.lgStatus = {
 exports.lgJoin = {
 	usage : "<nom de la partie>",
 	description: "Rejoindre une partie de loup-garou",
+	args: 1,
 	process: function(bot,msg,suffix){
 		try{
 			for(var i = 0; i < games.length; i++){
@@ -57,10 +59,11 @@ exports.lgJoin = {
 exports.lgCreate = {
 	usage : "<nom de la partie> <nombre de joueur>",
 	description: "Creer une partie de loup-garou",
+	args : 2,
 	process: function(bot,msg,suffix){
 
-		args = suffix.split(" ");
-		var game = new LgGame(args[0],args[1],bot,msg);
+
+		var game = new LgGame(suffix[0],suffix[1],bot,msg);
 		try{
 			games.push(game);
 			game.makeChannel();
@@ -77,13 +80,17 @@ exports.lgGames = {
 	process: function(bot,msg,suffix){
 		try{
 			var info = "";
-			for(var i = 0; i < games.length; i++){
-				var game = games[i];
-				if(game.players.length == game.maxPlayers){
-					info += "\nsalon complet " + game.titre + " " + game.players.length + "/" + game.maxPlayers + " joueurs dans le salon";
-				}else{
-					info += "\nsalon incomplet " + game.titre + " " + game.players.length + "/" + game.maxPlayers + " joueurs dans le salon";
+			if(games.length > 0){
+				for(var i = 0; i < games.length; i++){
+					var game = games[i];
+					if(game.players.length == game.maxPlayers){
+						info += "\nsalon complet " + game.titre + " " + game.players.length + "/" + game.maxPlayers + " joueurs dans le salon";
+					}else{
+						info += "\nsalon incomplet " + game.titre + " " + game.players.length + "/" + game.maxPlayers + " joueurs dans le salon";
+					}
 				}
+			}else{
+				info += "\nIl n'y aucune partie en cours pour le moment";
 			}
 			msg.reply(info);
 		}catch(e){
