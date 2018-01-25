@@ -13,7 +13,7 @@ exports.commands = [
 exports.lgCancel = {
 	usage: "<nom de la partie>",
 	description: "Supprimer une partie en attente",
-	args: 1,
+	args: [{type: "string", optional: false}],
 	process: function(bot,msg,suffix){
 		try{
 			for(var i = 0; i < games.length; i++){
@@ -39,7 +39,7 @@ exports.lgCancel = {
 exports.lgStatus = {
 	usage : "<nom de la partie>",
 	description: "voir le statut d'une partie",
-	args: 1,
+	args: [{type: "string", optional: false}],
 	process: function(bot,msg,suffix){
 		try{
 			for(var i = 0; i < games.length; i++){
@@ -64,7 +64,7 @@ exports.lgStatus = {
 exports.lgJoin = {
 	usage : "<nom de la partie>",
 	description: "Rejoindre une partie de loup-garou",
-	args: 1,
+	args: [{type: "string", optional: false}],
 	process: function(bot,msg,suffix){
 		try{
 			for(var i = 0; i < games.length; i++){
