@@ -5,8 +5,7 @@ exports.commands = [
 exports.bonne = {
 	usage: "<un utilisateur>",
 	description: "elle est bonne ma copine hein?",
-	args: 1,
-	type: "mention",
+	args: [{type: "mention", optional: "false"}],
 	process: function(bot,msg,suffix){
 		
 		mentionné = msg.mentions.users.first().toString();

@@ -25,6 +25,7 @@ function load_plugins(){
 			console.log("bug plugins folder "  + err)
 		}
 		if(plugin){
+			delete require.cache[require.resolve(plugin_dir + plugin_folders[i])];
 			if("commands" in plugin){
 				for(var j = 0; j < plugin.commands.length; j++){
 					if(plugin.commands[j] in plugin){

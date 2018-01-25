@@ -21,6 +21,15 @@ function LgGame(titre,maxPlayers,bot,msg) {
 			return false;
 		}
 	}
+
+	this.checkPlayers = function(player){
+		for(var i = 0; i < this.players.length; i++){
+			if(this.players[i] == player){
+				return true;
+			}
+			return false;
+		}
+	}
 };
 
 module.exports = LgGame;
