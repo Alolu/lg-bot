@@ -10,11 +10,11 @@ var plugin_dir = "./plugins/";
 var plugin_folders = getDirectories(plugin_dir);
 
 exports.init = function(){
-	load_plugins()
+	return load_plugins();
 }
 
 function load_plugins(){
-	var bot = require('./index.js');
+	var bot = require('./index');
 	var commandCount = 0;
 
 	for(var i = 0; i < plugin_folders.length; i++){
@@ -36,5 +36,5 @@ function load_plugins(){
 			}
 		}
 	}
-	console.log(commandCount);
+	return commandCount;
 }

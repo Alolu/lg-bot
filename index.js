@@ -1,7 +1,8 @@
 const Discord = require('discord.js')
 const bot = new Discord.Client()
 const Mention = Discord.MessageMentions
-const plugins = require("./plugins.js")
+const plugins = require("./plugins")
+delete require.cache[require.resolve("./plugins")];
 
 var commands = { }
 
@@ -12,6 +13,7 @@ var commandPrefix = ";"
 bot.on("ready", function () {
 	plugins.init();
 	bot.user.setActivity(commandPrefix+"help for help");
+	console.log("On!");
 })
 
 function checkArgs(argsList,args,msg,errMsg){
@@ -25,7 +27,7 @@ function checkArgs(argsList,args,msg,errMsg){
 		for(var i = 0; i < duration; i++){
 			var arg = args[i];
 			var argPattern = argsList[i];
-			console.log(arg,argPattern);
+			var n = (i+1);
 			if(argPattern == null && arg){
 				msg.reply("\nIl y'a trop de parametres!" + errMsg)
 				return false;
@@ -35,15 +37,15 @@ function checkArgs(argsList,args,msg,errMsg){
 				return false;
 			}
 			if(argPattern.type == "number" && isNaN(arg)){
-				msg.reply("\nle parametre numero " + (i+1) +" doit être un numero!" + errMsg)
+				msg.reply("\nle parametre numero " + n +" doit être un numero!" + errMsg)
 				return false;
 			}
 			if(argPattern.type == "string" && arg.match(Mention.USERS_PATTERN)){
-				msg.reply("\nle parametre numero " + i + " doit être une chaine de caractere! (Pas de mention)" + errMsg)
+				msg.reply("\nle parametre numero " + n + " doit être une chaine de caractere! (Pas de mention)" + errMsg)
 				return false;
 			}
 			if(argPattern.type == "mention" && !arg.match(Mention.USERS_PATTERN)){
-				msg.reply("\nle parametre numero " + i + " doit être une mention!" + errMsg)
+				msg.reply("\nle parametre numero " + n + " doit être une mention!" + errMsg)
 				return false;
 			}
 		}
@@ -98,7 +100,8 @@ function checkForCommands(msg){
 			}
 		}else if(cmdTxt === "reload"){
 			commands = { }
-			plugins.init();
+			var commandCount = plugins.init();
+			msg.reply("\n" + commandCount + " commandes actualisées!")
 		}else if(cmd){
 			try{
 				if(cmd.args){
