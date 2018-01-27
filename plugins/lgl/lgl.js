@@ -36,8 +36,9 @@ exports.lgCancel = {
 						return false;
 					}
 					game.players.forEach(function(player){
-						playerList.delete(player.player.id);
+						playerList.delete(player.id);
 					});
+					game.category.delete().then(console.log("Category deleted!")).catch(console.error);
 					game.channel.delete().then(console.log("Channel deleted!")).catch(console.error);
 					game.role.delete().then(console.log("Role deleted!")).catch(console.error);
 					games.splice(i,1);
@@ -65,7 +66,7 @@ exports.lgStatus = {
 					batch = "\nEtat de la partie : " + game.state + ".";
 					batch += "\nJoueurs : ";
 					for(var j = 0; j < game.players.length; j++){
-						var player = game.players[j].player;
+						var player = game.players[j];
 						batch += "\n" + player.toString();
 					}
 					batch += "\nComposition de la partie : "; 
@@ -73,8 +74,11 @@ exports.lgStatus = {
 						batch += role.nom + ", ";
 					});
 				}
+				console.log(game.category.permissionOverwrites,"lol");
+				msg.reply(batch);
+				return true;
 			}
-			msg.reply(batch);
+			msg.reply("\nIl n'y a aucune partie de ce nom!");
 		}catch(e){
 			console.log(e.stack);
 		}
