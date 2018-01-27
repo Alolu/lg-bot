@@ -1,3 +1,6 @@
+const role = require("./LgRole");
+delete require.cache[require.resolve("./LgRole")];
+
 function LgGame(titre,maxPlayers,bot,msg,createur) {
 
 	this.titre = titre;
@@ -6,10 +9,18 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	this.bot = bot;
 	this.msg = msg;
 	this.guild = msg.guild;
-	this.state = "En attente de joueurs"; 
+	this.state = "En attente de joueurs";
+	this.compo = [];
 	this.players = [];
 
-	this.makePerms = function(){
+	this.makeCompo = function(){
+		this.compo.push(new role.Loup());
+		for(var i = 1; i < this.maxPlayers; i++){
+			this.compo.push(new role.Villageois());
+		}
+		console.log(this.compo)
+	}
+	this.makePerms = function(playerList){
 	    var server = this.msg.guild;
 	    server.createRole({
 	    	name: "Joueur " + this.titre,
@@ -17,9 +28,9 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	    })
 	    .then((role) => server.createChannel(this.titre, "text")
 			.then((channel) => {
-				this.createur.addRole(role);
 				this.channel = channel;
 				this.role = role;
+				this.addPlayer(this.createur,playerList);
 				var roles = server.roles.array();
 				for(var j = 0; j < roles.length; j++){
 					this.channel.overwritePermissions(roles[j],{
@@ -79,10 +90,21 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 		
 	}
 
-	this.addPlayer = function(player){
+	this.makeReady = function(player) {
+		var rPlayer = this.checkPlayers(player);
+		rPlayer.ready = !rPlayer.ready;
+		if(rPlayer.ready){
+			this.channel.send(rPlayer.player.toString() + " est prêt! " + this.role.toString());
+		}else{
+			this.channel.send(rPlayer.player.toString() + " n'est plus prêt! " + this.role.toString());
+		}
+	}
+
+	this.addPlayer = function(player,playerList){
 		if(this.players.length < this.maxPlayers){
-			this.players.push(player);
-			player.addRole(this.role);
+			this.players.push({player: player, ready: false});
+			player.addRole(this.role).then(() => console.log('Done!')).catch(console.error);
+			playerList.set(player.id,this);
 			return true;
 		}else{
 			return false;
@@ -91,8 +113,8 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 
 	this.checkPlayers = function(player){
 		for(var i = 0; i < this.players.length; i++){
-			if(this.players[i].id == player.id){
-				return true;
+			if(this.players[i].player.id == player.id){
+				return this.players[i];
 			}
 			return false;
 		}

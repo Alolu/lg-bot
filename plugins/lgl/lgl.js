@@ -1,7 +1,8 @@
-
+const Discord = require('discord.js');
 const LgGame = require("./LgGame");
 delete require.cache[require.resolve("./LgGame")];
 var games = [];
+var playerList = new Discord.Collection();
 
 function compareUser(user,server){
 	var gm = server.members.array();
@@ -17,7 +18,8 @@ exports.commands = [
 	"lgCreate",
 	"lgGames",
 	"lgStatus",
-	"lgCancel"
+	"lgCancel",
+	"lgReady"
 ]
 
 exports.lgCancel = {
@@ -33,7 +35,11 @@ exports.lgCancel = {
 						msg.reply("Seul le createur de la partie peux supprimer cette partie!")
 						return false;
 					}
-					
+					game.players.forEach(function(player){
+						playerList.delete(player.player.id);
+					});
+					game.channel.delete().then(console.log("Channel deleted!")).catch(console.error);
+					game.role.delete().then(console.log("Role deleted!")).catch(console.error);
 					games.splice(i,1);
 					msg.reply("La partie " + game.titre + " à été supprimée.");
 					return true;
@@ -59,9 +65,13 @@ exports.lgStatus = {
 					batch = "\nEtat de la partie : " + game.state + ".";
 					batch += "\nJoueurs : ";
 					for(var j = 0; j < game.players.length; j++){
-						var player = game.players[j];
+						var player = game.players[j].player;
 						batch += "\n" + player.toString();
 					}
+					batch += "\nComposition de la partie : "; 
+					game.compo.forEach(function(role){
+						batch += role.nom + ", ";
+					});
 				}
 			}
 			msg.reply(batch);
@@ -85,13 +95,16 @@ exports.lgJoin = {
 						msg.reply("Vous êtes deja dans cette partie !");
 						return false;
 					}
-					if(game.addPlayer(compareUser(player,msg.guild))){
+					if(game.addPlayer(compareUser(player,msg.guild),playerList)){
 						msg.reply("Vous avez rejoint la partie " + game.titre);
+						return true;
 					}else{
 						msg.reply("Il n'y a plus assez de place dans cette partie");
+						return false;
 					}
 				}
 			}
+			msg.reply("Il n'y a pas de partie à ce nom!");
 		}catch(e){
 			console.log(e.stack);
 		}
@@ -111,8 +124,8 @@ exports.lgCreate = {
 		var game = new LgGame(suffix[0],suffix[1],bot,msg,compareUser(msg.author,msg.guild));
 		try{
 			games.push(game);
-			game.makePerms();
-			game.addPlayer(msg.author.toString());
+			game.makePerms(playerList);
+			game.makeCompo();
 		}catch(e){
 			console.log(e.stack);
 		}
@@ -137,7 +150,25 @@ exports.lgGames = {
 			}else{
 				info += "\nIl n'y aucune partie en cours pour le moment";
 			}
+			console.log(playerList);
 			msg.reply(info);
+		}catch(e){
+			console.log(e.stack);
+		}
+	}
+}
+
+exports.lgReady = {
+	usage: "",
+	description : "passe de l'etat attente a pret, ou de l'etat pret a attente",
+	process: function(bot,msg,suffix){
+		try{
+			var game = playerList.get(msg.author.id);
+			if(game){
+				game.makeReady(msg.author);
+				return true;
+			}
+			msg.reply("Vous n'avez rejoint aucune partie");
 		}catch(e){
 			console.log(e.stack);
 		}
