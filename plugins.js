@@ -9,7 +9,7 @@ function getDirectories(srcpath){
 var plugin_dir = "./plugins/";
 var plugin_folders = getDirectories(plugin_dir);
 
-exports.init = function(){
+function init(){
 	return load_plugins();
 }
 
@@ -21,6 +21,7 @@ function load_plugins(){
 		var plugin;
 		try{
 			plugin = require(plugin_dir + plugin_folders[i])
+			console.log(plugin_dir + plugin_folders[i])
 		}catch(err){
 			console.log("bug plugins folder "  + err)
 		}
@@ -38,3 +39,5 @@ function load_plugins(){
 	}
 	return commandCount;
 }
+
+module.exports = {getDirectories,init};

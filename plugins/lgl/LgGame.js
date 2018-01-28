@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
-const role = require("./LgRole");
-delete require.cache[require.resolve("./LgRole")];
-var deny = {				
+const plugin = require('../../plugins');
+var roleList = new Discord.Collection()
+var deny = {
 	'ADMINISTRATOR' : 				false,			
 	'CREATE_INSTANT_INVITE' : 		false,
 	'KICK_MEMBERS' : 				false,
@@ -32,8 +32,7 @@ var deny = {
 	'MANAGE_ROLES' : 				false,
 	'MANAGE_ROLES_OR_PERMISSIONS' : false,
 	'MANAGE_WEBHOOKS' : 			false,
-	'MANAGE_EMOJIS' : 				false
-}
+	'MANAGE_EMOJIS' : 				false}
 var allow = {
 	'MENTION_EVERYONE' : 			false,
 	'MANAGE_MESSAGES' : 			false,
@@ -65,8 +64,9 @@ var allow = {
 	'MANAGE_ROLES' : 				false,
 	'MANAGE_ROLES_OR_PERMISSIONS' : false,
 	'MANAGE_WEBHOOKS' : 			false,
-	'MANAGE_EMOJIS' : 				false
-}
+	'MANAGE_EMOJIS' : 				false}
+var role_dir = './plugins/lgl/roles/';
+var role_folders = plugin.getDirectories(role_dir);
 
 Promise.properRace = function(promises, count = 1, results = []) {
   promises = Array.from(promises);
@@ -97,6 +97,29 @@ Promise.properRace = function(promises, count = 1, results = []) {
   });
 };
 
+function load_roles(){
+	var roleCount = 0;
+
+	for(var i = 0; i < role_folders.length; i++){
+		var role;
+		try{
+			role = require(role_dir + role_folders[i])
+		}catch(err){
+			console.log("bug role folder "  + err)
+		}
+		if(role){
+			delete require.cache[require.resolve(plugin_dir + role_folders[i])];
+			if("setup" in role){
+				roleList.set(role.setup,role[role_folders[i]]);
+			}
+		}
+	}
+	console.log(roleCount,roleList);
+	return roleCount;
+}
+
+load_roles();
+
 function LgGame(titre,maxPlayers,bot,msg,createur) {
 
 	this.titre = titre;
@@ -110,11 +133,12 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	this.players = [];
 
 	this.makeCompo = function(){
-		this.compo.push(new role.Loup());
+		this.compo.push("osef");
 		for(var i = 1; i < this.maxPlayers; i++){
-			this.compo.push(new role.Villageois());
+			this.compo.push("osef");
 		}
 	}
+
 	this.makePerms = function(playerList){
 	    var server = this.msg.guild;
 	    var roles = server.roles.array();
@@ -155,6 +179,10 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	    	.catch(console.error);
 	}
 
+	this.run = function(){
+
+	}
+
 	this.makeReady = function(player) {
 		var rPlayer = this.checkPlayers(player);
 		rPlayer.ready = !rPlayer.ready;
@@ -163,7 +191,8 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 			console.log(this.players.length,this.maxPlayers)
 			if(this.players.length == this.maxPlayers){
 				if(this.checkReady()){
-					this.channel.send("Tout le monde est prêt, la partie va commencer! " + this.role.toString());
+					this.channel.send("Tout le monde est prêt, la partie va bientôt commencer! " + this.role.toString());
+					this.run();
 				}
 			}
 		}else{
