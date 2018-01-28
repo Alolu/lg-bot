@@ -1,11 +1,11 @@
-Villageois = require("../Villageois/Villageois")
+const base = require("../Villageois/Villageois");
 
-exports.LoupGarou
+
 exports.setup = {
-	random: "shit";
+	nom: "Loup-garou"
 }
 
-class LoupGarou extends Villageois {
+class LoupGarou extends base.Villageois {
 	
 	constructor(player){
 		super(player)
@@ -14,7 +14,7 @@ class LoupGarou extends Villageois {
 
 	loupVote(role){
 		if(role.nom != "Loup-garou"){
-			role.loupVotes += 1
+			role.loupVotes += 1;
 			return true;
 		}
 		return false;
@@ -24,3 +24,4 @@ class LoupGarou extends Villageois {
   	}
 }
 
+exports.LoupGarou = LoupGarou;

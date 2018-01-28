@@ -71,11 +71,10 @@ exports.lgStatus = {
 					}
 					batch += "\nComposition de la partie : "; 
 					game.compo.forEach(function(role){
-						batch += role.nom + ", ";
+						batch += role + ", ";
 					});
 				}
-				console.log(game.category.permissionOverwrites,"lol");
-				msg.reply(batch);
+				msg.reply(batch.substr(0,batch.length-2) + ".");
 				return true;
 			}
 			msg.reply("\nIl n'y a aucune partie de ce nom!");
@@ -128,8 +127,8 @@ exports.lgCreate = {
 		var game = new LgGame(suffix[0],suffix[1],bot,msg,compareUser(msg.author,msg.guild));
 		try{
 			games.push(game);
-			game.makePerms(playerList);
 			game.makeCompo();
+			game.makePerms(playerList);
 		}catch(e){
 			console.log(e.stack);
 		}

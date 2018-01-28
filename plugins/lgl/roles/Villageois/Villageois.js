@@ -1,8 +1,8 @@
 
 
-exports.Villageois
+
 exports.setup = {
-	random: "shit";
+	nom: "Villageois"
 }
 
 class Villageois {
@@ -23,3 +23,5 @@ class Villageois {
   		this.etat = "mort";
   	}
 }
+
+exports.Villageois = Villageois;

@@ -65,8 +65,8 @@ var allow = {
 	'MANAGE_ROLES_OR_PERMISSIONS' : false,
 	'MANAGE_WEBHOOKS' : 			false,
 	'MANAGE_EMOJIS' : 				false}
-var role_dir = './plugins/lgl/roles/';
-var role_folders = plugin.getDirectories(role_dir);
+var role_dir = './roles/';
+var role_folders = plugin.getDirectories("./plugins/lgl/roles/");
 
 Promise.properRace = function(promises, count = 1, results = []) {
   promises = Array.from(promises);
@@ -108,14 +108,23 @@ function load_roles(){
 			console.log("bug role folder "  + err)
 		}
 		if(role){
-			delete require.cache[require.resolve(plugin_dir + role_folders[i])];
+			delete require.cache[require.resolve(role_dir + role_folders[i])];
 			if("setup" in role){
-				roleList.set(role.setup,role[role_folders[i]]);
+				roleList.set(role[role_folders[i]],role.setup);
 			}
 		}
 	}
-	console.log(roleCount,roleList);
 	return roleCount;
+}
+
+function shuffle(a) {
+    var j, x, i;
+    for (i = a.length - 1; i > 0; i--) {
+        j = Math.floor(Math.random() * (i + 1));
+        x = a[i];
+        a[i] = a[j];
+        a[j] = x;
+    }
 }
 
 load_roles();
@@ -131,12 +140,14 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	this.state = "En attente de joueurs";
 	this.compo = [];
 	this.players = [];
+	this.gameplayers = [];
 
 	this.makeCompo = function(){
-		this.compo.push("osef");
+		this.compo.push(roleList.find('nom','Loup-garou').nom);
 		for(var i = 1; i < this.maxPlayers; i++){
-			this.compo.push("osef");
+			this.compo.push(roleList.find('nom','Villageois').nom);
 		}
+		console.log(this.compo);
 	}
 
 	this.makePerms = function(playerList){
@@ -179,6 +190,15 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	    	.catch(console.error);
 	}
 
+	this.prerun = function(){
+		shuffle(this.players);
+		for(var i = 0; i < this.maxPlayers; i++){
+			var role = roleList.findKey('nom',this.compo[i])
+			this.gameplayers.push(new role(this.players[i]));
+			this.players[i].DM.send("Votre role est " + this.compo[i]);
+		}
+	}
+
 	this.run = function(){
 
 	}
@@ -188,11 +208,10 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 		rPlayer.ready = !rPlayer.ready;
 		if(rPlayer.ready){
 			this.channel.send(rPlayer.toString() + " est prêt! " + this.role.toString());
-			console.log(this.players.length,this.maxPlayers)
 			if(this.players.length == this.maxPlayers){
 				if(this.checkReady()){
 					this.channel.send("Tout le monde est prêt, la partie va bientôt commencer! " + this.role.toString());
-					this.run();
+					this.prerun();
 				}
 			}
 		}else{
@@ -211,6 +230,10 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 
 	this.addPlayer = function(player,playerList){
 		if(this.players.length < this.maxPlayers){
+			player.createDM()
+				.then((DM) => {
+					player.DM = DM;
+				})
 			player.ready = false;
 			this.players.push(player);
 			player.addRole(this.role).then(() => console.log('Done!')).catch(console.error);
