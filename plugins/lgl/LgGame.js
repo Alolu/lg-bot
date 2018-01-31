@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
 const plugin = require('../../plugins');
+var lgl = require('./lgl');
 var roleList = new Discord.Collection()
 var deny = {
 	'ADMINISTRATOR' : 				false,			
@@ -104,13 +105,24 @@ function load_roles(){
 		var role;
 		try{
 			role = require(role_dir + role_folders[i])
+			console.log("|__" + role_folders[i])
 		}catch(err){
-			console.log("bug role folder "  + err)
+			console.log("bug role folder : "  + err)
 		}
 		if(role){
 			delete require.cache[require.resolve(role_dir + role_folders[i])];
 			if("setup" in role){
 				roleList.set(role[role_folders[i]],role.setup);
+			}
+
+			if("commands" in role){
+				for(var j = 0; j < role.commands.length; j++){
+					if(role.commands[j] in role){
+						lgl.addCommand(role.commands[j],role[role.commands[j]]);
+						roleCount++;
+					}
+				}
+				
 			}
 		}
 	}
@@ -127,6 +139,10 @@ function shuffle(a) {
     }
 }
 
+var sleep = function(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms*1000));
+}
+
 load_roles();
 
 function LgGame(titre,maxPlayers,bot,msg,createur) {
@@ -137,27 +153,24 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	this.bot = bot;
 	this.msg = msg;
 	this.guild = msg.guild;
-	this.state = "En attente de joueurs";
+	this.state = "En attente";
 	this.compo = [];
 	this.players = [];
-	this.gameplayers = [];
+	this.ordre = [];
+	this.gameplayers = new Discord.Collection();
 
 	this.makeCompo = function(){
-		this.compo.push(roleList.find('nom','Loup-garou').nom);
-		for(var i = 1; i < this.maxPlayers; i++){
-			this.compo.push(roleList.find('nom','Villageois').nom);
-		}
-		console.log(this.compo);
+		this.compo.push(roleList.find('nom','Loup-garou'));
+		this.compo.push(roleList.find('nom','Villageois'));
 	}
 
 	this.makePerms = function(playerList){
-	    var server = this.msg.guild;
-	    var roles = server.roles.array();
+	    var roles = this.guild.roles.array();
 
 	    Promise.properRace(
-	    [server.createChannel(this.titre, "category"),
-	    server.createChannel(this.titre,"text"),
-	    server.createRole({ name: "Joueur " + this.titre, color: "BLUE" })]
+	    [this.guild.createChannel(this.titre, "category")
+	    ,this.guild.createChannel("Village","text")
+	    ,this.guild.createRole({ name: "Joueur " + this.titre, color: "BLUE" })]
 	    , 3)
 	    	.then((results) => {
 	    		var promises = [];
@@ -183,24 +196,89 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	    		promises.push(this.channel.overwritePermissions(this.role,allow))
 				promises.push(this.channel.setParent(this.category))
 
-	    		Promise.properRace(promises,roles.length)
-	    			.then((results2) => console.log("done"))
+	    		Promise.properRace(promises,promises.length)
+	    			.then((results2) => console.log(this.titre + "'s permissions done"))
 	    			.catch(console.error);
 	    	})
 	    	.catch(console.error);
 	}
 
+	this.makeChannel = function(nom,thisrole,callback){
+		var roles = this.guild.roles.array();
+		var promises = [];
+		var specialchannel;
+		var specialrole;
+		Promise.properRace([this.guild.createChannel(nom,"text"),this.guild.createRole({ name: "?", color: "RED" })],2)
+		.then((results) => {
+			for(var i = 0; i < results.length; i++){
+	    			if(results[i].constructor.name == "TextChannel"){
+	    				specialchannel  = results[i];
+	    			}else if(results[i].constructor.name == "Role"){
+	    				specialrole = results[i];
+	    			}
+	    		}
+
+	    		callback(specialrole,specialchannel);
+
+	    		var specialgameplayers = this.gameplayers.findAll('nom',thisrole);
+
+	    		for(var v = 0; v < specialgameplayers.length; v++){
+	    			specialgameplayers[v].player.addRole(specialrole);
+	    		}
+
+	    		for(var j = 0; j < roles.length; j++){
+	    			promises.push(specialchannel.overwritePermissions(roles[j],deny))
+	    		}
+	    		promises.push(specialchannel.overwritePermissions(specialrole,allow))
+				promises.push(specialchannel.setParent(this.category))
+
+				Promise.properRace(promises,promises.length)
+	    			.then((results2) => console.log(thisrole + "'s channel done"))
+	    			.catch(console.error);
+		})
+		.catch(console.error)
+	}
+
 	this.prerun = function(){
 		shuffle(this.players);
-		for(var i = 0; i < this.maxPlayers; i++){
-			var role = roleList.findKey('nom',this.compo[i])
-			this.gameplayers.push(new role(this.players[i]));
-			this.players[i].DM.send("Votre role est " + this.compo[i]);
+		for(var i = 0; i < this.players.length; i++){
+			var role = roleList.findKey('nom',this.compo[i].nom)
+			this.gameplayers.set(this.compo[i],new role(this.players[i]));
+			this.players[i].DM.send("Votre role est " + this.compo[i].nom);
+			this.ordre.push(this.compo[i]);
+		}
+		for(var j = 0; j < this.ordre.length; j++){
+			this.ordre[j].start(this);
+		}
+		this.run();
+	}
+
+	this.run = async function(){
+		this.state = "En cours"
+		while(this.state == "En cours"){
+			this.time = "day";
+			this.channel.send("Tout le monde se leve...")
+			this.displayTime(10);
+			await sleep(12);
+			this.channel.send("tout le monde s'endors...")
+			for(var i = 0; i < this.ordre.length; i++){
+				if(this.ordre[i].nuit){
+					this.ordre[i].nuit(this);
+					await sleep(12);
+				}
+			}		
 		}
 	}
 
-	this.run = function(){
-
+	this.displayTime = function(time){
+		var that = this;
+		this.timeRemainingInterval = setInterval(function(){
+			that.category.setName("🐺   " + that.titre + " " + time + "   🐺");
+			time -= 1;
+			if(time < 0){
+				clearInterval(that.timeRemainingInterval);
+			}
+		},1000);
 	}
 
 	this.makeReady = function(player) {
@@ -236,7 +314,7 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 				})
 			player.ready = false;
 			this.players.push(player);
-			player.addRole(this.role).then(() => console.log('Done!')).catch(console.error);
+			player.addRole(this.role).then(() => console.log('role added to player')).catch(console.error);
 			this.category.setName("🐺   " + this.titre + " " + this.players.length + "/" + this.maxPlayers + "   🐺");
 			playerList.set(player.id,this);
 			return true;

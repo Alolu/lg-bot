@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
-const LgGame = require("./LgGame");
-delete require.cache[require.resolve("./LgGame")];
+const index = require('../../index');
 var games = [];
+var rolecommands = { };
 var playerList = new Discord.Collection();
 
 function compareUser(user,server){
@@ -13,14 +13,88 @@ function compareUser(user,server){
 	}
 }
 
+exports.addCommand = function(commandName,commandObject){
+	try {
+		rolecommands[commandName] = commandObject;
+	} catch(err){
+		console.log(err);
+	}
+}
+
+const LgGame = require("./LgGame");
+delete require.cache[require.resolve("./LgGame")];
+
 exports.commands = [
 	"lgJoin",
 	"lgCreate",
 	"lgGames",
 	"lgStatus",
 	"lgCancel",
-	"lgReady"
+	"lgReady",
+	"lgAct"
 ]
+
+exports.lgAct = {
+	usage: "<action>",
+	description: "Effectue l'action d'un personnage en partie",
+	args: [{type: "string", optional: false},{type:"all", optional: true, endless: true}],
+	process: function(bot,msg,suffix){
+		try{
+			var cmd;
+			console.log("Checking for action");
+			if (suffix.constructor == Array){
+				cmd = rolecommands[suffix[0]]
+				suffix.splice(0,1);
+			}else{
+				cmd = rolecommands[suffix]
+			}
+			if(cmd){
+				console.log("Action found!");
+				var game = playerList.get(msg.author.id);
+				if(cmd.args){
+					var args = suffix;
+					var errMsg = "\n" + cmd.usage + "\n" + cmd.description;
+					var gameplayer;
+
+					if(!game){
+						msg.reply("\nVous devez etre dans une partie pour utiliser lgAct!");
+						return false;
+					}
+					if(cmd.role){
+						for(var i = 0; i < cmd.role.length; i++){
+							console.log("checking player role");
+							var playerCheck = game.gameplayers.find("nom",cmd.role[i]);
+							if(playerCheck){
+								if(playerCheck.player.id == msg.author.id){
+									gameplayer = true; 
+								}
+							}
+						}
+						if(!gameplayer){
+							msg.reply("\nCette action n'est pas disponible pour votre role!");
+							return false;
+						}
+
+					}
+
+					if(index.checkArgs(cmd.args,args,msg,errMsg)){
+						if(args.length == 1){
+							cmd.process(bot,msg,args[0],game);
+						}else{
+							cmd.process(bot,msg,args,game);
+						}
+					}
+				}else{
+					cmd.process(bot,msg,suffix,game);
+				}
+			}else{
+				msg.channel.send("Ceci n'est pas une commande!")
+			}
+		}catch(e){
+			console.log(e.stack);
+		}
+	}
+}
 
 exports.lgCancel = {
 	usage: "<nom de la partie>",
@@ -28,6 +102,7 @@ exports.lgCancel = {
 	args: [{type: "string", optional: false}],
 	process: function(bot,msg,suffix){
 		try{
+			console.log("deleting game");
 			for(var i = 0; i < games.length; i++){
 				var game = games[i];
 				if(suffix == game.titre){
@@ -41,7 +116,19 @@ exports.lgCancel = {
 					game.category.delete().then(console.log("Category deleted!")).catch(console.error);
 					game.channel.delete().then(console.log("Channel deleted!")).catch(console.error);
 					game.role.delete().then(console.log("Role deleted!")).catch(console.error);
+					if(game.state == "En cours"){
+						game.state = "Fermeture";
+						if(game.timeRemainingInterval){
+							clearInterval(game.timeRemainingInterval);
+						}
+						for(var j = 0; j < game.ordre.length; j++){
+							if(game.ordre[i].end){
+								game.ordre[i].end(game);
+							}
+						}	
+					}
 					games.splice(i,1);
+					console.log("game deleted");
 					msg.reply("La partie " + game.titre + " à été supprimée.");
 					return true;
 				}
@@ -71,7 +158,7 @@ exports.lgStatus = {
 					}
 					batch += "\nComposition de la partie : "; 
 					game.compo.forEach(function(role){
-						batch += role + ", ";
+						batch += role.nom + ", ";
 					});
 				}
 				msg.reply(batch.substr(0,batch.length-2) + ".");
@@ -129,6 +216,7 @@ exports.lgCreate = {
 			games.push(game);
 			game.makeCompo();
 			game.makePerms(playerList);
+			console.log("game created")
 		}catch(e){
 			console.log(e.stack);
 		}
@@ -169,6 +257,7 @@ exports.lgReady = {
 			var game = playerList.get(msg.author.id);
 			if(game){
 				game.makeReady(msg.author);
+				console.log("player ready");
 				return true;
 			}
 			msg.reply("Vous n'avez rejoint aucune partie");

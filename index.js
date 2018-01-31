@@ -11,14 +11,17 @@ bot.login('NDA1MDE1MTEyOTc4NzkyNDU4.DUeU_w.IyHsxPeHSCspM7Rp_6ZBpItBDT4')
 var commandPrefix = ";"
 
 bot.on("ready", function () {
+	console.log("Adding plugins");
 	plugins.init();
-	bot.user.setActivity(commandPrefix+"help for help");
+	bot.user.setActivity(commandPrefix+"help for help | jtm margo");
 	console.log("On!");
 })
 
 function checkArgs(argsList,args,msg,errMsg){
 	try{
+		console.log("Checking arguments")
 		var duration;
+		var endless = false;
 		if(args.length<argsList.length){
 			duration = argsList.length;
 		}else{
@@ -28,13 +31,22 @@ function checkArgs(argsList,args,msg,errMsg){
 			var arg = args[i];
 			var argPattern = argsList[i];
 			var n = (i+1);
+			if(endless){
+				argPattern = argsList[endless];
+			}
 			if(argPattern == null && arg){
 				msg.reply("\nIl y'a trop de parametres!" + errMsg)
 				return false;
 			}
+			if(argPattern.endless && !endless){
+				endless = i;
+			}
 			if(!argPattern.optional && !arg){
 				msg.reply("\nIl n'y a pas assez de parametres!" + errMsg)
 				return false;
+			}
+			if(argPattern.optional && !arg){
+				return true;
 			}
 			if(argPattern.type == "number" && isNaN(arg)){
 				msg.reply("\nle parametre numero " + n +" doit être un numero!" + errMsg)
@@ -59,6 +71,7 @@ function checkArgs(argsList,args,msg,errMsg){
 function checkForCommands(msg){
 
 	if(msg.author.id != bot.user.id && (msg.content.startsWith(commandPrefix))){
+		console.log("Checking for commands");
 		var cmdTxt = msg.content.split(" ")[0].substr(commandPrefix.length);
 		var suffix = msg.content.substr(cmdTxt.length+commandPrefix.length+1);
 		if(msg.isMentioned(bot.user)){
@@ -103,6 +116,7 @@ function checkForCommands(msg){
 			var commandCount = plugins.init();
 			msg.reply("\n" + commandCount + " commandes actualisées!")
 		}else if(cmd){
+			console.log("command found!")
 			try{
 				if(cmd.args){
 					var args = suffix.split(" ");
@@ -160,9 +174,11 @@ function checkForCommands(msg){
 	}
 }
 
-bot.on("message", (msg) => checkForCommands(msg));
+bot.on("message", (msg) => {
+	checkForCommands(msg)
+});
 
-exports.addCommand = function(commandName,commandObject){
+function addCommand(commandName,commandObject){
 	try {
 		commands[commandName] = commandObject;
 	} catch(err){
@@ -170,3 +186,4 @@ exports.addCommand = function(commandName,commandObject){
 	}
 }
 
+module.exports = { checkArgs,addCommand };
