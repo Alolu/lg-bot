@@ -117,7 +117,6 @@ exports.lgCancel = {
 					game.channel.delete().then(console.log("Channel deleted!")).catch(console.error);
 					game.role.delete().then(console.log("Role deleted!")).catch(console.error);
 					if(game.state == "En cours"){
-						game.state = "Fermeture";
 						if(game.timeRemainingInterval){
 							clearInterval(game.timeRemainingInterval);
 						}
@@ -125,7 +124,8 @@ exports.lgCancel = {
 							if(game.ordre[i].end){
 								game.ordre[i].end(game);
 							}
-						}	
+						}
+						game.state = "Fermeture";
 					}
 					games.splice(i,1);
 					console.log("game deleted");

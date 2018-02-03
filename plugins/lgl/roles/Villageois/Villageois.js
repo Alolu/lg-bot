@@ -16,7 +16,10 @@ exports.vote = {
 	process: function(bot,msg,suffix,game){
 		try	{
 			var player = game.gameplayers.find(val => val.player.id === msg.author.id);
-			console.log(msg.mentions.users.first().id)
+			var votedplayer = game.gameplayers.find(val => val.player.id === msg.mentions.users.first().id);
+			player.vote(votedplayer);
+			console.log(votedplayer.votes, "voted player vote");
+			console.log(player.votefor);
 		}catch(e){
 			console.log(e);
 		}
@@ -27,6 +30,7 @@ class Villageois {
 
 	constructor(player) {
     	this.player = player;
+    	this.nickname = player.displayName;
     	this.votes = 0;
 		this.loupVotes = 0;
 		this.etat = "vivant";
@@ -34,8 +38,9 @@ class Villageois {
     }
 	
 	vote(role){
-		this.votefor = role;
-		role.votes += 1 
+		this.votefor = role.player.id;
+		role.votes += 1;
+		role.player.setNickname(role.nickname + " (" + role.votes + ")");
   	}
   	meurt(role){
   		this.etat = "mort";

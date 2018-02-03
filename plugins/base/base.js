@@ -1,3 +1,6 @@
+const util = require('../../util');
+delete require.cache[require.resolve('../../util')];
+
 exports.commands = [
 	"bonne",
 ]

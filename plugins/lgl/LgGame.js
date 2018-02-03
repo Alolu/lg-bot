@@ -1,5 +1,8 @@
 const Discord = require('discord.js');
 const plugin = require('../../plugins');
+const util = require('../../util');
+delete require.cache[require.resolve('../../util')];
+
 var lgl = require('./lgl');
 var roleList = new Discord.Collection()
 var deny = {
@@ -66,8 +69,14 @@ var allow = {
 	'MANAGE_ROLES_OR_PERMISSIONS' : false,
 	'MANAGE_WEBHOOKS' : 			false,
 	'MANAGE_EMOJIS' : 				false}
+var read = {
+	'READ_MESSAGES' : 				true,
+	'READ_MESSAGE_HISTORY' : 		true
+}
 var role_dir = './roles/';
 var role_folders = plugin.getDirectories("./plugins/lgl/roles/");
+
+
 
 Promise.properRace = function(promises, count = 1, results = []) {
   promises = Array.from(promises);
@@ -164,43 +173,34 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 		this.compo.push(roleList.find('nom','Villageois'));
 	}
 
-	this.makePerms = function(playerList){
-	    var roles = this.guild.roles.array();
+	this.makePerms = async function(playerList){
 
-	    Promise.properRace(
-	    [this.guild.createChannel(this.titre, "category")
-	    ,this.guild.createChannel("Village","text")
-	    ,this.guild.createRole({ name: "Joueur " + this.titre, color: "BLUE" })]
-	    , 3)
-	    	.then((results) => {
-	    		var promises = [];
-	    		
+		var that = this;
 
-	    		for(var i = 0; i < results.length; i++){
-	    			if(results[i].constructor.name == "CategoryChannel"){
-	    				this.category = results[i];
-	    			}else if(results[i].constructor.name == "TextChannel"){
-	    				this.channel  = results[i];
-	    			}else if(results[i].constructor.name == "Role"){
-	    				this.role = results[i];
-	    			}
-	    		}
-
-	    		this.addPlayer(this.createur,playerList);
-
-	    		for(var j = 0; j < roles.length; j++){
-	    			promises.push(this.channel.overwritePermissions(roles[j],deny))
-	    			promises.push(this.category.overwritePermissions(roles[j],deny))
-	    		}
-	    		promises.push(this.category.overwritePermissions(this.role,allow))
-	    		promises.push(this.channel.overwritePermissions(this.role,allow))
-				promises.push(this.channel.setParent(this.category))
-
-	    		Promise.properRace(promises,promises.length)
-	    			.then((results2) => console.log(this.titre + "'s permissions done"))
-	    			.catch(console.error);
-	    	})
-	    	.catch(console.error);
+		var channels = {
+		    Village : {
+		      	["joueur" + this.titre]: {
+		      		nom: "base",
+		        	permission: allow
+		      	},
+		      	mort:{
+		      		nom: "mort",
+		        	permission: read
+		      	}
+		    },
+		    Cimetiere:{
+		      	mort:{
+		      		nom: "mort",
+		        	permission: allow
+		      	}
+		    }
+		}
+		util.makePerms(channels,this.guild,async function(channels,roles){
+			that.category = await that.guild.createChannel(that.titre, "category");
+			for(var i = 0; i < channels.array().length; i++){
+				channels.array()[i].setParent(that.category);
+			}
+		})
 	}
 
 	this.makeChannel = function(nom,thisrole,callback){
@@ -253,6 +253,14 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 		this.run();
 	}
 
+	this.voteCheck = function(){
+		var votes = [];
+		var highestVote = Math.max.apply(Math,this.gameplayers.array().map(function(o){return o.votes;}))
+		console.log(highestVote);
+		var highestVoted = this.gameplayers.findAll("votes",highestVote);
+		console.log(highestVoted);
+	}
+
 	this.run = async function(){
 		this.state = "En cours"
 		while(this.state == "En cours"){
@@ -260,6 +268,7 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 			this.channel.send("Tout le monde se leve...")
 			this.displayTime(10);
 			await sleep(12);
+			this.voteCheck();
 			this.channel.send("tout le monde s'endors...")
 			for(var i = 0; i < this.ordre.length; i++){
 				if(this.ordre[i].nuit){
