@@ -110,20 +110,22 @@ exports.lgCancel = {
 						msg.reply("Seul le createur de la partie peux supprimer cette partie!")
 						return false;
 					}
+
 					game.players.forEach(function(player){
 						playerList.delete(player.id);
 					});
 					game.category.delete().then(console.log("Category deleted!")).catch(console.error);
-					game.channel.delete().then(console.log("Channel deleted!")).catch(console.error);
-					game.role.delete().then(console.log("Role deleted!")).catch(console.error);
+					game.channels.forEach(function(channel){
+						channel.delete().then(console.log("Channel deleted!")).catch(console.error);
+					})
+					game.roles.forEach(function(role){
+						role.delete().then(console.log("Role deleted!")).catch(console.error);
+					})
+					
+					
 					if(game.state == "En cours"){
 						if(game.timeRemainingInterval){
 							clearInterval(game.timeRemainingInterval);
-						}
-						for(var j = 0; j < game.ordre.length; j++){
-							if(game.ordre[i].end){
-								game.ordre[i].end(game);
-							}
 						}
 						game.state = "Fermeture";
 					}
@@ -185,7 +187,7 @@ exports.lgJoin = {
 						msg.reply("Vous êtes deja dans cette partie !");
 						return false;
 					}
-					if(game.addPlayer(compareUser(player,msg.guild),playerList)){
+					if(game.addPlayer(msg.member,playerList)){
 						msg.reply("Vous avez rejoint la partie " + game.titre);
 						return true;
 					}else{
@@ -211,7 +213,7 @@ exports.lgCreate = {
 	process: function(bot,msg,suffix){
 
 
-		var game = new LgGame(suffix[0],suffix[1],bot,msg,compareUser(msg.author,msg.guild));
+		var game = new LgGame(suffix[0],suffix[1],bot,msg,msg.member);
 		try{
 			games.push(game);
 			game.makeCompo();

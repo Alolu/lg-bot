@@ -42,8 +42,10 @@ class Villageois {
 		role.votes += 1;
 		role.player.setNickname(role.nickname + " (" + role.votes + ")");
   	}
-  	meurt(role){
+  	meurt(game){
   		this.etat = "mort";
+  		this.player.addRole(game.roles.get("mort"));
+  		this.player.removeRole(game.roles.get("base"));
   	}
 }
 

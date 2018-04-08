@@ -134,6 +134,11 @@ var allow = {
   'MANAGE_ROLES_OR_PERMISSIONS' : false,
   'MANAGE_WEBHOOKS' :       false,
   'MANAGE_EMOJIS' :         false}
+var read = {
+  'READ_MESSAGES' :         true,
+  'READ_MESSAGE_HISTORY' :    true
+}
+
 
 var sleep = function(ms) {
   return new Promise(resolve => setTimeout(resolve, ms*1000));
@@ -172,4 +177,4 @@ async function makePerms(channels,guild,callback){
   }
 }
 
-module.exports = { makePerms }
+module.exports = { makePerms,allow,deny,read }

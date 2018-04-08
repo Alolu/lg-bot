@@ -2,23 +2,25 @@ const base = require("../Villageois/Villageois");
 
 exports.setup = {
 	nom: "Loup-garou",
-	start: function(game){
+	start: function(channels,util){
 		console.log("setup started Loup-garou")
-		console.log(this.nom,"this.nom");
-		game.makeChannel("Taniere_des_loups",this.nom,function(role,channel){
-			game.loupchannel = channel
-			game.louprole = role
-		});
+		
+		channels["Taniere_des_loups"] = {
+			["?"] : {
+				nom: this.nom,
+				permission: util.allow
+			}
+		}
+
 		console.log("setup ended Loup-garou")
+
+		return channels;
 	},
+
 	nuit: async function(game,sleep){
-		game.loupchannel.send("Les loups se levent");
-		game.displayTime(10);
-	},
-	end: function(game){
-		game.loupchannel.delete().then(console.log("Channel deleted!")).catch(console.error);
-		game.louprole.delete().then(console.log("Role deleted!")).catch(console.error);
-	} 
+		var channel = game.channels.get("Taniere_des_loups");
+		channel.send("Les loups se levent");
+	}
 }
 
 class LoupGarou extends base.Villageois {
@@ -35,9 +37,6 @@ class LoupGarou extends base.Villageois {
 		}
 		return false;
 	}
-	meurt(role){
-  		this.etat = "mort";
-  	}
 }
 
 exports.LoupGarou = LoupGarou;

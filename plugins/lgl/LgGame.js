@@ -5,74 +5,6 @@ delete require.cache[require.resolve('../../util')];
 
 var lgl = require('./lgl');
 var roleList = new Discord.Collection()
-var deny = {
-	'ADMINISTRATOR' : 				false,			
-	'CREATE_INSTANT_INVITE' : 		false,
-	'KICK_MEMBERS' : 				false,
-	'BAN_MEMBERS' : 				false,
-	'MANAGE_CHANNELS' : 			false, 
-	'MANAGE_GUILD' : 				false,
-	'ADD_REACTIONS' : 				false,
-	'VIEW_AUDIT_LOG' : 				false,
-	'VIEW_CHANNEL' : 				false,
-	'READ_MESSAGES' : 				false,
-	'SEND_MESSAGES' : 				false,
-	'SEND_TTS_MESSAGES' : 			false,
-	'MANAGE_MESSAGES' : 			false,
-	'EMBED_LINKS' : 				false,
-	'ATTACH_FILES' : 				false,
-	'READ_MESSAGE_HISTORY' : 		false,
-	'MENTION_EVERYONE' : 			false,
-	'USE_EXTERNAL_EMOJIS' : 		false,
-	'EXTERNAL_EMOJIS' : 			false,
-	'CONNECT' : 					false,
-	'SPEAK' : 						false,
-	'MUTE_MEMBERS' : 				false,
-	'DEAFEN_MEMBERS' : 				false,
-	'MOVE_MEMBERS' : 				false,
-	'USE_VAD' : 					false,
-	'CHANGE_NICKNAME' : 			false,
-	'MANAGE_NICKNAMES' : 			false,
-	'MANAGE_ROLES' : 				false,
-	'MANAGE_ROLES_OR_PERMISSIONS' : false,
-	'MANAGE_WEBHOOKS' : 			false,
-	'MANAGE_EMOJIS' : 				false}
-var allow = {
-	'MENTION_EVERYONE' : 			false,
-	'MANAGE_MESSAGES' : 			false,
-	'ADMINISTRATOR' : 				false,			
-	'CREATE_INSTANT_INVITE' : 		false,
-	'KICK_MEMBERS' : 				false,
-	'BAN_MEMBERS' : 				false,
-	'MANAGE_CHANNELS' : 			false, 
-	'MANAGE_GUILD' : 				false,
-	'ADD_REACTIONS' : 				true,
-	'VIEW_AUDIT_LOG' : 				false,
-	'VIEW_CHANNEL' : 				true,
-	'READ_MESSAGES' : 				true,
-	'SEND_MESSAGES' : 				true,
-	'SEND_TTS_MESSAGES' : 			true,
-	'EMBED_LINKS' : 				true,
-	'ATTACH_FILES' : 				true,
-	'READ_MESSAGE_HISTORY' : 		true,
-	'USE_EXTERNAL_EMOJIS' : 		true,
-	'EXTERNAL_EMOJIS' : 			true,
-	'CONNECT' : 					false,
-	'SPEAK' : 						false,
-	'MUTE_MEMBERS' : 				false,
-	'DEAFEN_MEMBERS' : 				false,
-	'MOVE_MEMBERS' : 				false,
-	'USE_VAD' : 					false,
-	'CHANGE_NICKNAME' : 			false,
-	'MANAGE_NICKNAMES' : 			false,
-	'MANAGE_ROLES' : 				false,
-	'MANAGE_ROLES_OR_PERMISSIONS' : false,
-	'MANAGE_WEBHOOKS' : 			false,
-	'MANAGE_EMOJIS' : 				false}
-var read = {
-	'READ_MESSAGES' : 				true,
-	'READ_MESSAGE_HISTORY' : 		true
-}
 var role_dir = './roles/';
 var role_folders = plugin.getDirectories("./plugins/lgl/roles/");
 
@@ -163,6 +95,8 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	this.msg = msg;
 	this.guild = msg.guild;
 	this.state = "En attente";
+	this.roles = new Discord.Collection();
+	this.channels = new Discord.Collection();
 	this.compo = [];
 	this.players = [];
 	this.ordre = [];
@@ -173,33 +107,37 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 		this.compo.push(roleList.find('nom','Villageois'));
 	}
 
-	this.makePerms = async function(playerList){
+	this.makePerms = function(playerList){
 
 		var that = this;
 
 		var channels = {
 		    Village : {
-		      	["joueur" + this.titre]: {
+		      	["joueur " + this.titre]: {
 		      		nom: "base",
-		        	permission: allow
+		        	permission: util.allow
 		      	},
 		      	mort:{
 		      		nom: "mort",
-		        	permission: read
+		        	permission: util.read
 		      	}
 		    },
 		    Cimetiere:{
 		      	mort:{
 		      		nom: "mort",
-		        	permission: allow
+		        	permission: util.allow
 		      	}
 		    }
 		}
+
 		util.makePerms(channels,this.guild,async function(channels,roles){
 			that.category = await that.guild.createChannel(that.titre, "category");
+			that.roles = roles;
+			that.channels = channels;
 			for(var i = 0; i < channels.array().length; i++){
 				channels.array()[i].setParent(that.category);
 			}
+			that.addPlayer(that.createur,playerList);
 		})
 	}
 
@@ -244,35 +182,51 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 		for(var i = 0; i < this.players.length; i++){
 			var role = roleList.findKey('nom',this.compo[i].nom)
 			this.gameplayers.set(this.compo[i],new role(this.players[i]));
-			this.players[i].DM.send("Votre role est " + this.compo[i].nom);
+			this.players[i].send("Votre role est " + this.compo[i].nom);
 			this.ordre.push(this.compo[i]);
 		}
+		var channels = {};
 		for(var j = 0; j < this.ordre.length; j++){
-			this.ordre[j].start(this);
+			this.ordre[j].start(channels,util);
 		}
+		var that = this;
+		console.log(channels);
+		util.makePerms(channels,this.guild,function(channels,roles){
+			that.roles = that.roles.concat(roles);
+			that.channels = that.channels.concat(channels);
+			for(var i = 0; i < channels.array().length; i++){
+				channels.array()[i].setParent(that.category);
+			}
+		})
 		this.run();
 	}
 
 	this.voteCheck = function(){
 		var votes = [];
 		var highestVote = Math.max.apply(Math,this.gameplayers.array().map(function(o){return o.votes;}))
-		console.log(highestVote);
-		var highestVoted = this.gameplayers.findAll("votes",highestVote);
-		console.log(highestVoted);
+		var highestVoted = this.gameplayers.find("votes",highestVote);
+		highestVoted.meurt(this);
 	}
 
 	this.run = async function(){
+		var channel = this.channels.get("Village");
 		this.state = "En cours"
 		while(this.state == "En cours"){
+
 			this.time = "day";
-			this.channel.send("Tout le monde se leve...")
+
+			channel.send("Tout le monde se leve...")
 			this.displayTime(10);
 			await sleep(12);
 			this.voteCheck();
-			this.channel.send("tout le monde s'endors...")
+
+			this.time = "night";
+
+			channel.send("tout le monde s'endors...")
 			for(var i = 0; i < this.ordre.length; i++){
 				if(this.ordre[i].nuit){
 					this.ordre[i].nuit(this);
+					this.displayTime(10);
 					await sleep(12);
 				}
 			}		
@@ -292,17 +246,19 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 
 	this.makeReady = function(player) {
 		var rPlayer = this.checkPlayers(player);
+		var channel = this.channels.get("Village");
+		var role = this.roles.get("base");
 		rPlayer.ready = !rPlayer.ready;
 		if(rPlayer.ready){
-			this.channel.send(rPlayer.toString() + " est prêt! " + this.role.toString());
+			channel.send(rPlayer.toString() + " est prêt! " + role.toString());
 			if(this.players.length == this.maxPlayers){
 				if(this.checkReady()){
-					this.channel.send("Tout le monde est prêt, la partie va bientôt commencer! " + this.role.toString());
+					channel.send("Tout le monde est prêt, la partie va bientôt commencer! " + role.toString());
 					this.prerun();
 				}
 			}
 		}else{
-			this.channel.send(rPlayer.toString() + " n'est plus prêt! " + this.role.toString());
+			channel.send(rPlayer.toString() + " n'est plus prêt! " + role.toString());
 		}
 	}
 
@@ -317,13 +273,9 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 
 	this.addPlayer = function(player,playerList){
 		if(this.players.length < this.maxPlayers){
-			player.createDM()
-				.then((DM) => {
-					player.DM = DM;
-				})
 			player.ready = false;
 			this.players.push(player);
-			player.addRole(this.role).then(() => console.log('role added to player')).catch(console.error);
+			player.addRole(this.roles.get("base")).then(() => console.log('role added to player')).catch(console.error);
 			this.category.setName("🐺   " + this.titre + " " + this.players.length + "/" + this.maxPlayers + "   🐺");
 			playerList.set(player.id,this);
 			return true;

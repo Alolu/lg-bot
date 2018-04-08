@@ -1,12 +1,15 @@
 const Discord = require('discord.js')
 const bot = new Discord.Client()
 const Mention = Discord.MessageMentions
+const config = require("./config")
 const plugins = require("./plugins")
+
 delete require.cache[require.resolve("./plugins")];
 
 var commands = { }
 
-bot.login('NDA1MDE1MTEyOTc4NzkyNDU4.DUeU_w.IyHsxPeHSCspM7Rp_6ZBpItBDT4')
+console.log(config);
+bot.login(config.botId);
 
 var commandPrefix = ";"
 
