@@ -20,8 +20,8 @@ function load_plugins(){
 	for(var i = 0; i < plugin_folders.length; i++){
 		var plugin;
 		try{
-			plugin = require(plugin_dir + plugin_folders[i])
 			console.log(plugin_dir + plugin_folders[i])
+			plugin = require(plugin_dir + plugin_folders[i])
 		}catch(err){
 			console.log("bug plugins folder "  + err)
 		}

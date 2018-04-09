@@ -11,12 +11,12 @@ var commands = { }
 console.log(config);
 bot.login(config.botId);
 
-var commandPrefix = ";"
+var commandPrefix = "$"
 
 bot.on("ready", function () {
 	console.log("Adding plugins");
 	plugins.init();
-	bot.user.setActivity(commandPrefix+"help for help | jtm margo");
+	bot.user.setActivity(commandPrefix+"help for Help");
 	console.log("On!");
 })
 
