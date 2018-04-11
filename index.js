@@ -34,6 +34,7 @@ function checkArgs(argsList,args,msg,errMsg){
 			var arg = args[i];
 			var argPattern = argsList[i];
 			var n = (i+1);
+			console.log(argPattern,arg);
 			if(endless){
 				argPattern = argsList[endless];
 			}

@@ -31,7 +31,8 @@ exports.commands = [
 	"lgStatus",
 	"lgCancel",
 	"lgReady",
-	"lgAct"
+	"lgAct",
+	"lgCompo"
 ]
 
 exports.lgAct = {
@@ -264,6 +265,40 @@ exports.lgReady = {
 			}
 			msg.reply("Vous n'avez rejoint aucune partie");
 		}catch(e){
+			console.log(e.stack);
+		}
+	}
+}
+
+exports.lgCompo = {
+	usage: "<role> <nombre>",
+	description: "Change la composition de la partie",
+	args:[
+		{type: "string"},
+		{type: "number", optional: "true"},
+		{type: "all", endless: "true", optional:"true"}
+	],
+	process: function(bot,msg,suffix){
+		try{
+			var game = playerList.get(msg.author.id);
+			if(!game){
+				msg.reply('Vous n\'avez aucune partie en cours!');
+				return false;
+			}
+			if(game.createur != msg.member){
+				msg.reply('Vous n\'êtes pas le createur de cette partie!');
+				return false;
+			}
+			if(suffix == "clear"){
+				game.compo = [];
+			}
+			if(suffix[0] == "add"){
+				suffix.splice(0,1);
+				var errMsg;
+				index.checkArgs(this.args,suffix,msg,errMsg);
+			}
+		}
+		catch(e){
 			console.log(e.stack);
 		}
 	}
