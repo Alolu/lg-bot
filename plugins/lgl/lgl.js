@@ -293,9 +293,12 @@ exports.lgCompo = {
 				game.compo = [];
 			}
 			if(suffix[0] == "add"){
+				//Essayer d'ajouter la commande Add pour la compo
+				//Troubleshoot: args problematique, a modifier pour accomoder string OU number au 2 eme argument
 				suffix.splice(0,1);
 				var errMsg;
-				index.checkArgs(this.args,suffix,msg,errMsg);
+				
+				console.log(index.checkArgs(this.args,suffix,msg,errMsg));
 			}
 		}
 		catch(e){
