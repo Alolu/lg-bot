@@ -275,8 +275,7 @@ exports.lgCompo = {
 	description: "Change la composition de la partie",
 	args:[
 		{type: "string"},
-		{type: "number", optional: "true"},
-		{type: "all", endless: "true", optional:"true"}
+		{type: "all", endless: 1, optional:"true"}
 	],
 	process: function(bot,msg,suffix){
 		try{
@@ -293,13 +292,15 @@ exports.lgCompo = {
 				game.compo = [];
 			}
 			if(suffix[0] == "add"){
-				//Essayer d'ajouter la commande Add pour la compo
-				//Troubleshoot: args problematique, a modifier pour accomoder string OU number au 2 eme argument
 				suffix.splice(0,1);
 				var errMsg;
-				
-				console.log(index.checkArgs(this.args,suffix,msg,errMsg));
+				var args = [
+					{type: "string"},
+					{type: "number", endless: 2, optional:"true"}
+				]
+				console.log(index.checkArgs(args,suffix,msg,errMsg));
 			}
+			msg.reply("no");
 		}
 		catch(e){
 			console.log(e.stack);

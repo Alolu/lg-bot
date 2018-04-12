@@ -34,16 +34,24 @@ function checkArgs(argsList,args,msg,errMsg){
 			var arg = args[i];
 			var argPattern = argsList[i];
 			var n = (i+1);
-			console.log(argPattern,arg);
+
+			// check if the previous pattern was an endless type
 			if(endless){
-				argPattern = argsList[endless];
+				argPattern = argsList[i - endless];
 			}
+
+			console.log(argPattern,arg,i + " " + endless);
+
 			if(argPattern == null && arg){
 				msg.reply("\nIl y'a trop de parametres!" + errMsg)
 				return false;
 			}
+			//if pattern is endless assign current i to endless var
+			if(argPattern.endless && endless){
+				endless += argPattern.endless;
+			}
 			if(argPattern.endless && !endless){
-				endless = i;
+				endless = argPattern.endless;
 			}
 			if(!argPattern.optional && !arg){
 				msg.reply("\nIl n'y a pas assez de parametres!" + errMsg)
