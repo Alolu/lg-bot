@@ -1,29 +1,67 @@
+//TO REWORK
+
+//Requirements
 const Discord = require('discord.js');
 const index = require('../../index');
+const plugin = require('../../plugins');
+
+//Global vars
 var games = [];
 var rolecommands = { };
 var playerList = new Discord.Collection();
+var roleList = new Discord.Collection()
+var role_dir = './roles/';
+var role_folders = plugin.getDirectories("./plugins/lgl/roles/");
 
-function compareUser(user,server){
-	var gm = server.members.array();
-	for(var i = 0; i < gm.length; i++){
-		if(gm[i].id == user.id){
-			return gm[i];
-		}
-	}
-}
-
-exports.addCommand = function(commandName,commandObject){
+//Global functions
+function addCommand(commandName,commandObject){
 	try {
 		rolecommands[commandName] = commandObject;
 	} catch(err){
 		console.log(err);
 	}
 }
+function load_roles(){
+	var roleCount = 0;
 
+	for(var i = 0; i < role_folders.length; i++){
+		var role;
+		try{
+			role = require(role_dir + role_folders[i])
+			console.log("|__" + role_folders[i])
+		}catch(err){
+			console.log("bug role folder : "  + err)
+		}
+		if(role){
+			delete require.cache[require.resolve(role_dir + role_folders[i])];
+			if("setup" in role){
+				roleList.set(role[role_folders[i]],role.setup);
+			}
+
+			if("commands" in role){
+				for(var j = 0; j < role.commands.length; j++){
+					if(role.commands[j] in role){
+						addCommand(role.commands[j],role[role.commands[j]]);
+						roleCount++;
+					}
+				}
+				
+			}
+		}
+	}
+	return roleCount;
+}
+
+//Modules loading + exports
+load_roles();
+exports.roleList = roleList;
+
+//Requirement after role processing
 const LgGame = require("./LgGame");
 delete require.cache[require.resolve("./LgGame")];
 
+
+//Commands
 exports.commands = [
 	"lgJoin",
 	"lgCreate",
@@ -38,7 +76,7 @@ exports.commands = [
 exports.lgAct = {
 	usage: "<action>",
 	description: "Effectue l'action d'un personnage en partie",
-	args: [{type: "string", optional: false},{type:"all", optional: true, endless: true}],
+	args: [{type: "string", optional: false},{type:"all", optional: true, endless: 1}],
 	process: function(bot,msg,suffix){
 		try{
 			var cmd;
@@ -298,7 +336,35 @@ exports.lgCompo = {
 					{type: "string"},
 					{type: "number", endless: 2, optional:"true"}
 				]
-				console.log(index.checkArgs(args,suffix,msg,errMsg));
+				if(index.checkArgs(args,suffix,msg,errMsg)){
+					console.log(suffix)
+					if(suffix.length%2 == 0){
+						var total = game.compo.length;
+						for(i=1; i<suffix.length; i+=2){
+							total += parseInt(suffix[i]);
+							console.log(total);
+							if(total > game.maxPlayers){
+								msg.reply("Trop de roles");
+								return false;
+							}
+						}
+						for(i=0; i<suffix.length; i+=2){
+							if(roleList.find('nom',suffix[i])){
+								for(v = 0; v < suffix[i+1]; v++){
+									game.compo.push(roleList.find('nom',suffix[i]));
+								}
+							}else{
+								msg.reply("Ce role n'existe pas");
+								return false;
+							}
+						}
+						msg.reply("Roles ajoutés!");
+						return true;
+					}else{
+						msg.reply("Precisez le nombre a ajouter!");
+						return false;
+					}
+				}	
 			}
 			msg.reply("no");
 		}

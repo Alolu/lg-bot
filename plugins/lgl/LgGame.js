@@ -1,74 +1,9 @@
 const Discord = require('discord.js');
-const plugin = require('../../plugins');
 const util = require('../../util');
 delete require.cache[require.resolve('../../util')];
 
 var lgl = require('./lgl');
-var roleList = new Discord.Collection()
-var role_dir = './roles/';
-var role_folders = plugin.getDirectories("./plugins/lgl/roles/");
-
-
-
-Promise.properRace = function(promises, count = 1, results = []) {
-  promises = Array.from(promises);
-  if (promises.length < count) {
-    return Promise.reject('Race is not finishable');
-  }
-   
-  // There is no way to know which promise is resolved/rejected.
-  // So we map it to a new promise to return the index wether it fails or succeeeds.
-  let indexPromises = promises.map((p, index) => p.then(() => index, () => {throw index;}));
-   
-  return Promise.race(indexPromises).then(index => {
-    // The promise has resolved, remove it from the list of promises, and add it 
-    // to the list of results
-    let p = promises.splice(index, 1)[0];
-    p.then(e => results.push(e));
-    if (count === 1) {
-      // The race has finished now, return the results
-      return results;
-    }
-    // Continue the race, but now we expect one less winner because we have found one
-    return Promise.properRace(promises, count-1, results);
-  }, index => {
-    // The promise has rejected, remove it from the list of promises and just 
-    // continue the race without changing the count.
-    promises.splice(index, 1);
-    return Promise.properRace(promises, count, results);
-  });
-};
-
-function load_roles(){
-	var roleCount = 0;
-
-	for(var i = 0; i < role_folders.length; i++){
-		var role;
-		try{
-			role = require(role_dir + role_folders[i])
-			console.log("|__" + role_folders[i])
-		}catch(err){
-			console.log("bug role folder : "  + err)
-		}
-		if(role){
-			delete require.cache[require.resolve(role_dir + role_folders[i])];
-			if("setup" in role){
-				roleList.set(role[role_folders[i]],role.setup);
-			}
-
-			if("commands" in role){
-				for(var j = 0; j < role.commands.length; j++){
-					if(role.commands[j] in role){
-						lgl.addCommand(role.commands[j],role[role.commands[j]]);
-						roleCount++;
-					}
-				}
-				
-			}
-		}
-	}
-	return roleCount;
-}
+delete require.cache[require.resolve('./lgl')];
 
 function shuffle(a) {
     var j, x, i;
@@ -83,8 +18,6 @@ function shuffle(a) {
 var sleep = function(ms) {
   return new Promise(resolve => setTimeout(resolve, ms*1000));
 }
-
-load_roles();
 
 function LgGame(titre,maxPlayers,bot,msg,createur) {
 
@@ -103,8 +36,7 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	this.gameplayers = new Discord.Collection();
 
 	this.makeCompo = function(){
-		this.compo.push(roleList.find('nom','Loup-garou'));
-		this.compo.push(roleList.find('nom','Villageois'));
+
 	}
 
 	this.makePerms = function(playerList){
@@ -180,7 +112,7 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	this.prerun = function(){
 		shuffle(this.players);
 		for(var i = 0; i < this.players.length; i++){
-			var role = roleList.findKey('nom',this.compo[i].nom)
+			var role = lgl.roleList.findKey('nom',this.compo[i].nom)
 			this.gameplayers.set(this.compo[i],new role(this.players[i]));
 			this.players[i].send("Votre role est " + this.compo[i].nom);
 			this.ordre.push(this.compo[i]);
