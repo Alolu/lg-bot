@@ -1,5 +1,6 @@
 exports.setup = {
 	nom: "Villageois",
+
 	start: function(gameplayers){
 		console.log("no setup Villageois")
 	}
@@ -15,11 +16,15 @@ exports.vote = {
 	args: [{type: "mention", optional: false}],
 	process: function(bot,msg,suffix,game){
 		try	{
-			var player = game.gameplayers.find(val => val.player.id === msg.author.id);
-			var votedplayer = game.gameplayers.find(val => val.player.id === msg.mentions.users.first().id);
-			player.vote(votedplayer);
-			console.log(votedplayer.votes, "voted player vote");
-			console.log(player.votefor);
+			if(game.time != "day"){
+				msg.reply("Vous ne pouvez voter que le jour!");
+				return false;
+			}
+			var playerRole = game.gameplayers.find(val => val.player.id === msg.author.id);
+			var votedPlayerRole = game.gameplayers.find(val => val.player.id === msg.mentions.users.first().id);
+
+			playerRole.vote(votedPlayerRole);
+			msg.channel.send(playerRole.player.toString() + " à voté pour " + votedPlayerRole.player.toString());
 		}catch(e){
 			console.log(e);
 		}
@@ -41,7 +46,8 @@ class Villageois {
 		this.votefor = role.player.id;
 		role.votes += 1;
 		role.player.setNickname(role.nickname + " (" + role.votes + ")");
-  	}
+	  }
+	  
   	meurt(game){
   		this.etat = "mort";
   		this.player.addRole(game.roles.get("mort"));

@@ -2,10 +2,15 @@ const base = require("../Villageois/Villageois");
 
 exports.setup = {
 	nom: "Loup-garou",
+	channel: "Taniere_des_loups",
+	nightMessage: "Les loups se lêvent!",
+
+	//Function ran before the start of a game
 	start: function(channels,util){
 		console.log("setup started Loup-garou")
 		
-		channels["Taniere_des_loups"] = {
+		//Channel and role init
+		channels[this.channel] = {
 			["?"] : {
 				nom: this.nom,
 				permission: util.allow
@@ -16,10 +21,10 @@ exports.setup = {
 
 		return channels;
 	},
-
+	
+	//Function ran every night during a game
 	nuit: async function(game,sleep){
-		var channel = game.channels.get("Taniere_des_loups");
-		channel.send("Les loups se levent");
+		var channel = game.channels.get();
 	}
 }
 

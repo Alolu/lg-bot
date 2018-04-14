@@ -197,7 +197,8 @@ exports.lgStatus = {
 						var player = game.players[j];
 						batch += "\n" + player.toString();
 					}
-					batch += "\nComposition de la partie : "; 
+					batch += "\nComposition de la partie : ";
+					console.log(game.compo); 
 					game.compo.forEach(function(role){
 						batch += role.nom + ", ";
 					});
@@ -316,6 +317,7 @@ exports.lgCompo = {
 		{type: "all", endless: 1, optional:"true"}
 	],
 	process: function(bot,msg,suffix){
+		//To finish
 		try{
 			var game = playerList.get(msg.author.id);
 			if(!game){
@@ -366,7 +368,6 @@ exports.lgCompo = {
 					}
 				}	
 			}
-			msg.reply("no");
 		}
 		catch(e){
 			console.log(e.stack);

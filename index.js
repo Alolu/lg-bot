@@ -8,7 +8,6 @@ delete require.cache[require.resolve("./plugins")];
 
 var commands = { }
 
-console.log(config);
 bot.login(config.botId);
 
 var commandPrefix = "$"

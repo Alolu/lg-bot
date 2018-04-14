@@ -36,7 +36,8 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	this.gameplayers = new Discord.Collection();
 
 	this.makeCompo = function(){
-
+		this.compo.push(lgl.roleList.find('nom','Loup-garou'))
+		console.log(this.compo);
 	}
 
 	this.makePerms = function(playerList){
@@ -136,41 +137,62 @@ function LgGame(titre,maxPlayers,bot,msg,createur) {
 	this.voteCheck = function(){
 		var votes = [];
 		var highestVote = Math.max.apply(Math,this.gameplayers.array().map(function(o){return o.votes;}))
-		var highestVoted = this.gameplayers.find("votes",highestVote);
-		highestVoted.meurt(this);
+		if(highestVote > 0){
+			var highestVoted = this.gameplayers.find("votes",highestVote);
+			highestVoted.meurt(this);
+			return true;
+		}
+		this.channels.get("Village").send("Personne ne sera sacrifié ce soir!");
+		
 	}
 
 	this.run = async function(){
 		var channel = this.channels.get("Village");
+		var that = this;
 		this.state = "En cours"
 		while(this.state == "En cours"){
 
+
+			//Day
 			this.time = "day";
 
 			channel.send("Tout le monde se leve...")
-			this.displayTime(10);
+			this.displayTime(10,function(){
+				channel.send("tout le monde s'endors...")
+			});
 			await sleep(12);
 			this.voteCheck();
+			
 
-			this.time = "night";
+			//Withdrawing permissions on everyone on Village
+			channel.overwritePermissions(this.roles.get('base'),util.deny);
 
-			channel.send("tout le monde s'endors...")
+			//Launching every roles special actions in turns
 			for(var i = 0; i < this.ordre.length; i++){
 				if(this.ordre[i].nuit){
-					this.ordre[i].nuit(this);
-					this.displayTime(10);
+					var actualRole = this.ordre[i]
+					this.time = actualRole.nom;
+					this.channels.get(actualRole.channel).send(actualRole.nightMessage + " " + this.roles.get(actualRole.nom).toString());
+					this.displayTime(10,function(){
+						that.channels.get(actualRole.channel).send("lol");
+					});
 					await sleep(12);
+					this.ordre[i].nuit(this);
 				}
-			}		
+			}
+			
+			//Setting back permissions on everyone on Village
+			channel.overwritePermissions(this.roles.get('base'),util.allow);
 		}
 	}
 
-	this.displayTime = function(time){
+	this.displayTime = function(time,callback){
 		var that = this;
 		this.timeRemainingInterval = setInterval(function(){
 			that.category.setName("🐺   " + that.titre + " " + time + "   🐺");
 			time -= 1;
 			if(time < 0){
+				callback();
 				clearInterval(that.timeRemainingInterval);
 			}
 		},1000);
